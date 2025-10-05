@@ -26,7 +26,7 @@ setup(
     name="piper-tts",
     version="1.3.1",
     description="Fast and local neural text-to-speech engine",
-    url="http://github.com/OHF-voice/piper1-gpl",
+    url="https://github.com/came-in/piper1-gpl",
     license="GPL-3.0-or-later",
     author="The Home Assistant Authors",
     author_email="hello@home-assistant.io",
