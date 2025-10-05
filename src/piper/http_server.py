@@ -9,7 +9,9 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional
 from urllib.request import urlopen
 
-from flask import Flask, request
+from flask import Flask, request, jsonify
+from functools import wraps
+import os
 from asgiref.wsgi import WsgiToAsgi
 from . import PiperVoice, SynthesisConfig
 from .download_voices import VOICES_JSON, download_voice
@@ -98,7 +100,21 @@ loaded_voices: Dict[str, PiperVoice] = {default_model_id: default_voice}
 # Create web server
 app = Flask(__name__)
 
+def require_auth(f):
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        auth_header = request.headers.get('Authorization')
+        if not auth_header or not auth_header.startswith('Bearer '):
+            return jsonify({"error": "Unauthorized"}), 401
+        token = auth_header.split(' ')[1]
+        expected_token = os.getenv('PIPER_AUTH_TOKEN')
+        if not expected_token or token != expected_token:
+            return jsonify({"error": "Unauthorized"}), 401
+        return f(*args, **kwargs)
+    return decorated_function
+
 @app.route("/voices", methods=["GET"])
+@require_auth
 def app_voices() -> Dict[str, Any]:
     """List downloaded voices.
 
@@ -130,6 +146,7 @@ def app_voices() -> Dict[str, Any]:
     return voices_dict
 
 @app.route("/all-voices", methods=["GET"])
+@require_auth
 def app_all_voices() -> Dict[str, Any]:
     """List all Piper voices.
 
@@ -140,6 +157,7 @@ def app_all_voices() -> Dict[str, Any]:
         return json.load(response)
 
 @app.route("/download", methods=["POST"])
+@require_auth
 def app_download() -> str:
     """Download a voice.
 
@@ -166,6 +184,7 @@ def app_download() -> str:
     return model_id
 
 @app.route("/", methods=["POST"])
+@require_auth
 def app_synthesize() -> bytes:
     """Synthesize audio from text.
 
