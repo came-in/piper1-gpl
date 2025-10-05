@@ -71,6 +71,7 @@ setup(
         ],
         "http": [
             "flask>=3,<4",
+            "asgiref"
         ],
         "alignment": [
             "onnx>=1,<2",
